@@ -1,6 +1,7 @@
 #include <SimpleDHT.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
+#include "pitches.h"
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -8,6 +9,16 @@
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
 #endif
+
+
+// pin 使用说明：
+// D0(16): led buzzer 信号
+// D1(5): SCL
+// D2(4): SDA
+// D3(0): dht11 信号
+// D4(2): button 信号
+
+
 
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
 
@@ -19,7 +30,17 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SD
 
 // https://blog.csdn.net/dpjcn1990/article/details/92831760
 
-int pinDHT11 = 2;
+
+// notes in the melody:
+int melody[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4};
+// note durations: 4 = quarter note, 8 = eighth note, etc.:
+int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
+
+int led = 16;     // LED引脚
+int button = 2; // 按键连接的引脚
+int temp = 0;    // 用于读取按键状态的临时变量
+
+int pinDHT11 = 0;
 SimpleDHT11 dht11(pinDHT11);
 
 
@@ -29,6 +50,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("=================================");
 //  Serial.println("Sample DHT11...");
+  pinMode(led, OUTPUT);   // LED设置为输入
+  pinMode(button, INPUT); // 按键设置为输出
 }
 
 
@@ -75,7 +98,34 @@ void loop() {
 
   u8g2.sendBuffer();          // transfer internal memory to the display
 
+  temp = digitalRead(button);
+  if (temp == LOW) {
+    digitalWrite(led, HIGH);
+    Serial.println("LED Turned ON, buzzer on");
 
-  delay(2000);
+    // iterate over the notes of the melody:
+    for (int thisNote = 0; thisNote < 8; thisNote++) {
+
+      // to calculate the note duration, take one second divided by the note type.
+      //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+      int noteDuration = 1000 / noteDurations[thisNote];
+      tone(led, melody[thisNote], noteDuration);
+
+      // to distinguish the notes, set a minimum time between them.
+      // the note's duration + 30% seems to work well:
+      int pauseBetweenNotes = noteDuration * 1.30;
+      delay(pauseBetweenNotes);
+      // stop the tone playing:
+      noTone(8);
+    }
+
+  }
+  else {
+    digitalWrite(led, LOW);
+    Serial.println("LED Turned OFF");
+    delay(1000);
+  }
+
+//  delay(2000);
 
 }
