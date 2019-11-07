@@ -22,6 +22,8 @@
 // D3(0): dht11 信号
 // D4(2): button 信号
 // D5(14): greed red only test 信号
+// D6(12): WIFI MODE led (0: station; 1:stationap)
+// D7(13): WIFI MODE button (0: station; 1:stationap)
 
 
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
@@ -46,6 +48,9 @@ int led = 16;     // LED引脚
 int button = 2; // 按键连接的引脚
 int temp = 0;    // 用于读取按键状态的临时变量
 int testled = 14;  // 用于测试
+int wifimodeled = 12;     // wifimode LED引脚
+int wifimodebutton = 13;     // wifimode LED引脚
+int tempwifimode = 0; // 用于读取按键状态的临时变量
 
 int pinDHT11 = 0;
 SimpleDHT11 dht11(pinDHT11);
@@ -98,7 +103,7 @@ void mytone() {
 
 void control()
 {
-  String myhtml ="<html><head><title>Test Smarthome</title></head><body><h1>Test Smarthome<h1><form>test led:<button type=\"submit\" name=\"testledstatus\"value=\"0\">off</button><button type=\"submit\" name=\"testledstatus\" value=\"1\">on</button></form><form>buzzer and led:<button type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form></body></html>";
+  String myhtml ="<html><head><title>Test Smarthome</title></head><body><h1>Test Smarthome<h1><form>test led:<button type=\"submit\" name=\"testledstatus\"value=\"0\">off</button><button type=\"submit\" name=\"testledstatus\" value=\"1\">on</button></form><form>buzzer and led:<button type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form><form>Wifi mode:<button type=\"submit\" name=\"wifiled\" value=\"0\">STA</button><button type=\"submit\" name=\"wifiled\" value=\"1\">STAAP</button></form></body></html>";
   myhtml += "Temperature: ";
   myhtml += temperature;
   myhtml += " C";
@@ -122,10 +127,20 @@ void control()
     digitalWrite(led,HIGH);
   }
 
+  if (server.arg("wifiled")=="0") {
+    digitalWrite(wifimodeled,LOW);
+  } else if (server.arg("wifiled")=="1") {
+    digitalWrite(wifimodeled,HIGH);
+  }
 }
 
 
-
+void blink(){
+  digitalWrite(wifimodeled, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(1000);                       // wait for a second
+  digitalWrite(wifimodeled, LOW);    // turn the LED off by making the voltage LOW
+  delay(1000);                       // wait for a second  
+}
 
 
 
@@ -173,6 +188,8 @@ void setup() {
   pinMode(button, INPUT); // 按键设置为输出
   pinMode(pinDHT11, OUTPUT); // 温度传感器设置为输入
   pinMode(testled, OUTPUT);   // LED设置为输入
+  pinMode(wifimodeled, OUTPUT);   // wifimode 设置为输入
+  pinMode(wifimodebutton, INPUT); // 按键设置为输出
 
 }
 
@@ -233,7 +250,7 @@ void loop() {
   u8g2.setCursor(0,10); // display temerature
   u8g2.print("温度: ");
   u8g2.print((int)temperature);
-  u8g2.print("度");
+  u8g2.print("°C");
   
   u8g2.setCursor(0,25); // display humidity
   u8g2.print("湿度: ");
@@ -275,6 +292,12 @@ void loop() {
       mytone();
   }
 
+
+  // wifi mode change , default station (0); change to stationap (1), after setting it need to reset.
+  tempwifimode = digitalRead(wifimodebutton);
+  if (tempwifimode == LOW) {
+      blink();
+  } 
 //  delay(2000);
 
 }
