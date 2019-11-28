@@ -5,6 +5,8 @@
 //      GND: GND
 //      DATA: 2
 // https://blog.bbskali.cn/index.php/archives/1337/
+// arduino ide 要安装两个库：DHT和Adafruit Unified Sensor
+
 
 int pinDHT11 = 2;
 SimpleDHT11 dht11(pinDHT11);
