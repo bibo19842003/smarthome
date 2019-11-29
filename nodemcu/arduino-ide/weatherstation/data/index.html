@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Smart Home</title>
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap.min.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">SmartHome</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav"><li><a href="/">Overview</a></li></ul>
+          <ul class="nav navbar-nav"><li><a href="/sensor">Sensor</a></li></ul>
+          <ul class="nav navbar-nav"><li><a href="/nocss">nocss</a></li></ul>
+        </div>
+
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <h3 class="page-header"></h3>
+
+      <form class="form-horizontal" role="form" action="" method="get">
+
+        <div class="form-group">
+          <label for="testled" class="col-sm-2 control-label">test led:</label>
+          <div class="col-sm-3">
+             <button type="submit" class="btn btn-default" name="testledstatus" value="0">off</button>
+             <button type="submit" class="btn btn-default" name="testledstatus" value="1">on</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="buzzerandled" class="col-sm-2 control-label">buzzer and led:</label>
+          <div class="col-sm-3">
+             <button type="submit" class="btn btn-default" name="ledstatus" value="0">off</button>
+             <button type="submit" class="btn btn-default" name="ledstatus" value="1">on</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="temperature0" class="col-sm-2 control-label">Temperature:</label>
+          <label for="temperature1" class="control-label">xxx</label>
+        </div>
+
+        <div class="form-group">
+          <label for="humidity0" class="col-sm-2 control-label">Humidity:</label>
+          <label for="humidity1" class="control-label">yyy</label>
+        </div>
+
+      </form>
+
+    </div>
+
+    <script src="jquery.min.js"></script>
+
+  </body>
+
+</html>
