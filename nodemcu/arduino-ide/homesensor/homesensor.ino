@@ -337,8 +337,9 @@ void loop() {
   digitalWrite(pinDHT11, 1);
   
   if ((err = dht11.read(&temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
-    Serial.print("Read DHT11 failed, err="); Serial.println(err);delay(1000);
-    return;
+    Serial.print("Read DHT11 failed, err="); 
+    Serial.println(err);
+//    return;
   }
 
 //  Serial.print((int)temperature); Serial.print(" °C, "); 
