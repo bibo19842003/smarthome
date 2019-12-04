@@ -50,7 +50,7 @@ SimpleDHT11 dht11(pinDHT11);
 // Create an instance of the server
 // specify the port to listen on as an argument
 ESP8266WebServer server;
-const char HTTP_HEADER_NEW[] PROGMEM          = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><meta http-equiv=\"refresh\" content=\"5\"><title></title>";
+const char HTTP_HEADER_NEW[] PROGMEM          = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><meta http-equiv=\"refresh\" content=\"5\"><title>SmartHome</title>";
 
 // 温度 湿度
 byte temperature = 0;
@@ -110,19 +110,19 @@ String airresult(){
 }
 
 
-void control()
-{
-  File file = SPIFFS.open("/index.html", "r");  
-  size_t sent = server.streamFile(file, "text/html");  
-  file.close();  
-}
-
-
 void blink1000(){
   digitalWrite(wifiled, HIGH);   // turn the LED on (HIGH is the voltage level)
   delay(1000);                       // wait for a second
   digitalWrite(wifiled, LOW);    // turn the LED off by making the voltage LOW
   delay(1000);                       // wait for a second  
+}
+
+
+void control()
+{
+  File file = SPIFFS.open("/index.html", "r");  
+  size_t sent = server.streamFile(file, "text/html");  
+  file.close();  
 }
 
 
@@ -144,6 +144,9 @@ void valsensor()
   myhtml += "Pressure: ";
   myhtml += dpresssure;
   myhtml += " Pa";
+  myhtml += "<br>";
+  myhtml += "Air: ";
+  myhtml += airresult(); 
   myhtml += FPSTR(HTTP_END);
   
   
@@ -154,7 +157,7 @@ void valsensor()
 void nocss()
 {
 //  String myhtml ="<html><head><title>Smart Home</title></head><body><h1>Test Smarthome<h1><form>test led:<button type=\"submit\" name=\"testledstatus\"value=\"0\">off</button><button type=\"submit\" name=\"testledstatus\" value=\"1\">on</button></form><form>buzzer and led:<button type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form><form>Wifi mode:<button type=\"submit\" name=\"wifiled\" value=\"0\">STA</button><button type=\"submit\" name=\"wifiled\" value=\"1\">STAAP</button></form></body></html>";
-  String myhtml ="<html><head><title>Smart Home</title></head><body><h1>Smart Home<h1><form>buzzer and led:<button type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form></body></html>";
+  String myhtml ="<html><head><style>font-size:20px;} .button {font-size: 16px;padding:15px 32px;border-radius: 16px;} </style><title>Smart Home</title></head><body><h1>Smart Home</h1><form>Led :<button class=\"button\" type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button class=\"button\" type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form></body></html>";
 
   myhtml += "Temperature: ";
   myhtml += temperature;
@@ -164,7 +167,19 @@ void nocss()
   myhtml += humidity;
   myhtml += " %";
   myhtml += "<br>";
+  myhtml += "Pressure: ";
+  myhtml += dpresssure;
+  myhtml += " Pa";
+  myhtml += "<br>";
+  myhtml += "Air: ";
+  myhtml += airresult(); 
+
   server.send(200,"text/html",myhtml);
+
+  if (server.arg("ledstatus")=="0") 
+    {digitalWrite(wifiled,LOW);} 
+  else if (server.arg("ledstatus")=="1") 
+    {digitalWrite(wifiled,HIGH);}
 }
 
 
@@ -269,28 +284,32 @@ void header(const char *string)
 
 
 
+
+
 void setup() {
 
    // set pinmode
   pinMode(wifiled, OUTPUT);   // LED设置为输入
   pinMode(pinDHT11, OUTPUT); // 温度传感器设置为输入
   pinMode(wifibutton, INPUT); // wifi重置
-  pinMode(ledPower,OUTPUT);
+  pinMode(ledPower,OUTPUT);  // 空气质量
   pinMode(dustPin, INPUT);
 
   // Connect to WiFi network
   WiFiManager wifiManager;
   wifiManager.autoConnect("dragonfly");
   
- // wifi 状态显示
- Serial.println();
- Serial.println("it needed connect wifi");
- while (WiFi.status() != WL_CONNECTED) {
+  // wifi 状态显示
+  Serial.println();
+  Serial.println("it needed connect wifi");
+  while (WiFi.status() != WL_CONNECTED) {
     blink1000();
     Serial.print(F("."));
- }
- Serial.print("AP IP address :");
- Serial.println(WiFi.localIP());
+  }
+  Serial.print("AP IP address :");
+  Serial.println(WiFi.localIP());
+  // wifi connected , led on.
+  digitalWrite(wifiled,HIGH);
 
   // display setting
   tft.begin();
@@ -302,7 +321,7 @@ void setup() {
   SPIFFS.begin();  
 
   // server route
-  server.on("/control",control);
+  //server.on("/control",control);
   server.on("/",nocss);
   server.on("/sensor",valsensor);
   server.on("/nocss",nocss);
@@ -332,8 +351,6 @@ void setup() {
 
 
 void loop() {
-  // wifi connected , led on.
-  digitalWrite(wifiled,HIGH);
   
   // 获取温度 湿度
   int err = SimpleDHTErrSuccess;
