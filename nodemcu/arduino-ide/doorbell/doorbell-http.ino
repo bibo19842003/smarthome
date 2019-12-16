@@ -13,7 +13,7 @@ String mdnsname = "doorbell";
 int n;
 
 // D4(2): button 信号
-int button = D4; // 按键连接的引脚
+int button = 2; // 按键连接的引脚
 
 int temp = 0;
 
@@ -108,7 +108,8 @@ void loop() {
   // 添加低功耗模式，modem模式不需要设置触发类型；GPIO_PIN_INTR_LOLEVEL/GPIO_PIN_INTR_HILEVEL
   // wifi_set_sleep_type(MODEM_SLEEP_T);
   wifi_set_sleep_type(LIGHT_SLEEP_T);
-  gpio_pin_wakeup_enable(D4, GPIO_PIN_INTR_LOLEVEL);
+  //gpio_pin_wakeup_enable(D4, GPIO_PIN_INTR_LOLEVEL);
+  gpio_pin_wakeup_enable(2, GPIO_PIN_INTR_LOLEVEL);
 
   MDNS.update();
   
