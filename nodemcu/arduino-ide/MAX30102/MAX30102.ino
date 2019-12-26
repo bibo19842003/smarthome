@@ -28,6 +28,16 @@
 
 #include "heartRate.h"
 
+#include <U8g2lib.h>
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
+
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
+
 MAX30105 particleSensor;
 
 const byte RATE_SIZE = 4; //Increase this for more averaging. 4 is good.
@@ -42,6 +52,9 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("Initializing...");
+
+  u8g2.begin();
+  u8g2.enableUTF8Print(); // enable UTF8 support for the print() function
 
   // Initialize sensor
   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
@@ -59,17 +72,17 @@ void setup()
 void loop()
 {
   long irValue = particleSensor.getIR();
-
+Serial.println("11111111111111111111111");
   if (checkForBeat(irValue) == true)
   {
     //We sensed a beat!
     long delta = millis() - lastBeat;
     lastBeat = millis();
-
+Serial.println("22222222222222222222");
     beatsPerMinute = 60 / (delta / 1000.0);
 
-    if (beatsPerMinute < 255 && beatsPerMinute > 20)
-    {
+    //if (beatsPerMinute < 255 && beatsPerMinute > 20)
+   // {
       rates[rateSpot++] = (byte)beatsPerMinute; //Store this reading in the array
       rateSpot %= RATE_SIZE; //Wrap variable
 
@@ -78,7 +91,7 @@ void loop()
       for (byte x = 0 ; x < RATE_SIZE ; x++)
         beatAvg += rates[x];
       beatAvg /= RATE_SIZE;
-    }
+    //}
   }
 
   Serial.print("IR=");
@@ -92,6 +105,26 @@ void loop()
     Serial.print(" No finger?");
 
   Serial.println();
+
+
+
+
+
+  u8g2.clearBuffer();         // 清除内部缓冲区
+  
+  u8g2.setFont(u8g2_font_wqy12_t_gb2312); // choose a suitable font u8g2_font_wqy12_t_gb2312 u8g2_font_ncenB08_tr
+
+// 显示温度 湿度
+  u8g2.setCursor(10,20); // display temerature
+  u8g2.print("BPM=");
+  u8g2.print(beatsPerMinute);
+
+  u8g2.setCursor(10,40); // display temerature
+  u8g2.print("Avg BPM=");
+  u8g2.print(beatAvg);
+
+  u8g2.sendBuffer();          // transfer internal memory to the display
+
+
+  delay(1000);
 }
-
-
