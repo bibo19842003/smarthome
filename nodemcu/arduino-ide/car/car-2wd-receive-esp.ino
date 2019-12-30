@@ -4,22 +4,19 @@
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPClient.h>
-#include <Arduino.h>
-#include <Servo.h>
 
 
 // ESP8266 Motor shield
 // pin 使用说明：
 // D0: 
-// D1: 超声波
-// D2: 超声波
-// D3: 
-// D4: 舵机
-// D5: 红外避障1（小车从右向做）
-// D6: 红外避障2（小车从右向做）
-// D7: 红外避障3（小车从右向做）
-// D8: 红外避障4（小车从右向做）
+// D1: 点击A转速
+// D2: 点击B转速
+// D3: 点击A方向
+// D4: 点击B方向
+// D5: 
+// D6: 
+// D7: 
+// D8: 
 // VM: 电机电源输入 4.5V~36V,可单独供电;
 // VIN: 控制电源输入 4.5V~9V(10VMAX),可单独供电
 // 短路 VM 和 VIN),可以方便地使用一路电源(必须 4.5V~9V)同时完成电机的驱动与控制;
@@ -29,7 +26,7 @@
 
 // mdns name 定义
 // String mdnsname = "dragonfly-" + String(ESP.getChipId()); //dragonfly-7914686.local
-  String mdnsname = "car-2w-slave";
+  String mdnsname = "car-2w";
 
 // http web page ,FPSTR from <WiFiManager.h>
 const char HTTP_HEADER_NEW[] PROGMEM          = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><title></title>";
@@ -38,23 +35,19 @@ const char HTTP_SCRIPT_NEW[] PROGMEM          = "<script>function c(l){document.
 const char HTTP_HEADER_END_NEW[] PROGMEM        = "</head><body><div style='text-align:center;display:inline-block;min-width:260px;'>";
 const char HTTP_END_NEW[] PROGMEM             = "</div></body></html>";
 
-// 超声波
-int trigPin = D1;
-int echoPin = D2;
 
-// 红外
-int ir1=D5;
-int ir2=D6;
-int ir3=D7;
-int ir4=D8;
+// 电机控制线
+int mas=D1;
+int mbs=D2;
+int mad=D3;
+int mbd=D4;
 
-// 超声波定义变量
-long duration;
-int distance;
+// 其他控制针角
+//int m11=D5;
+//int m12=D6;
+//int m21=D7;
+//int m22=D8;
 
-// http 服务定义
-HTTPClient http;
-String GetUrl;
 
 // 各种变量定义 - end
 
@@ -68,14 +61,97 @@ String GetUrl;
 // TCP server at port 80 will respond to HTTP requests
 ESP8266WebServer server;
 
-// 舵机定义
-Servo servo;
-
 
 
 // 各种服务定义 - end
 
 // ***********************************
+
+
+
+// car car car car car car car car car car car car car car car car car car car car
+// car forword  up
+void up(int mas, int mbs, int mad, int mbd){
+  // delay(500);
+  digitalWrite(mad,1);
+  digitalWrite(mbd,1);
+  // analogWrite(mas,1024)
+  digitalWrite(mas,1);
+  digitalWrite(mbs,1);
+}
+
+
+
+// car reversion down
+void down(){
+  digitalWrite(mad,0);
+  digitalWrite(mbd,0);
+  digitalWrite(mas,1);
+  digitalWrite(mbs,1);
+}
+
+
+
+// car counterclockwise
+void counterclockwise(){
+  digitalWrite(mad,0);
+  digitalWrite(mbd,1);
+  digitalWrite(mas,1);
+  digitalWrite(mbs,1);
+}
+
+
+
+// car clockwise
+void clockwise(){
+  digitalWrite(mad,1);
+  digitalWrite(mbd,0);
+  digitalWrite(mas,1);
+  digitalWrite(mbs,1);
+}
+
+
+
+void indexpage()
+{
+  
+ // String myhtml ="<html><head><title>Smart Home</title></head><body><h1>Smart Home<h1><form>buzzer and led:<button type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form></body></html>";
+
+  String myhtml = FPSTR(HTTP_HEADER_NEW);
+  myhtml += FPSTR(HTTP_SCRIPT_NEW);
+  myhtml += FPSTR(HTTP_STYLE_NEW);
+  myhtml += FPSTR(HTTP_HEADER_END_NEW);
+
+  myhtml += "<form>";
+  
+  myhtml += "<br/><br/>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"1\">Up</button>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"3\">Left</button>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"4\">Right</button><br/><br/>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"2\">Down</button>";
+
+  
+  myhtml += "</form>";
+
+  myhtml += FPSTR(HTTP_END_NEW);  
+  server.send(200,"text/html",myhtml);
+  
+  if (server.arg("car")=="1") {
+    Serial.println("qqqqqqqqqqqqqq");
+    up();
+  } else if (server.arg("car")=="2") {
+    Serial.println("hhhhhhhhhhhhhhhhh");
+    down();
+  } else if (server.arg("car")=="3") {
+    Serial.println("zuo zuo zuo");
+    counterclockwise();
+  } else if (server.arg("car")=="4") {
+    Serial.println("you you you");
+    clockwise();
+  }
+
+
+}
 
 
 // handleWebRequests
@@ -140,47 +216,7 @@ void mdnsresponder() {
 }
 
 
-int ssdistance(){
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
 
-  //将trigPin设置为HIGH状态10微秒
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-
-  // 读取echoPin，以微秒为单位返回声波传播时间
-  duration = pulseIn(echoPin, HIGH);
-
-  // 计算距离
-  distance= duration*0.034/2;
-  // 打印距离在串行监视器
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-  
-  return distance;
-}
-
-
-void identifyforword(String url){
-    // GetUrl = "http://car-2w-master.local/?car=3";    //自动识别转向
-    // GetUrl = "http://car-2w-master.local/?car=1";    //自动向前
-    http.begin(url);
-    Serial.println(url);
-    int httpCode = http.GET();
-    if (httpCode > 0) {
-      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-      //判断请求是否成功
-      if (httpCode == HTTP_CODE_OK) {
-        Serial.println("ok ok ok");
-        }
-      }
-    else {
-      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-    }
-    http.end();
-}
 
 // Power on setup
 void setup() {
@@ -188,15 +224,14 @@ void setup() {
   Serial.begin(115200);
   Serial.println("=================================");
 
-  pinMode(trigPin, OUTPUT); // 将trigPin设置为输出
-  pinMode(echoPin, INPUT); // 将echoPin设置为输入
-
-  pinMode(ir1,INPUT);
-  pinMode(ir2,INPUT);
-  pinMode(ir3,INPUT);
-  pinMode(ir4,INPUT);
-
-  servo.attach(2);  //D4   // servo.write(20);  // 调整为 20 度
+  pinMode(mas,OUTPUT);
+  pinMode(mbs,OUTPUT);
+  pinMode(mad,OUTPUT);
+  pinMode(mbd,OUTPUT);
+  //pinMode(m31,OUTPUT);
+  //pinMode(m32,OUTPUT);
+  //pinMode(m41,OUTPUT);
+  //pinMode(m42,OUTPUT);
 
   // Connect to WiFi network
   WiFiManager wifiManager;
@@ -219,9 +254,16 @@ void setup() {
   }
   Serial.println("mDNS responder started");
   Serial.println(mdnsname);
+  //往mDNS里面注册服务
+  MDNS.addService("car", "tcp", 8080); 
 
   // server route
-  server.on("/",mdnsresponder);
+  server.on("/",indexpage);
+  server.on("/indexpage",indexpage);
+  server.on("/up",up);
+  server.on("/down",down);
+  server.on("/counterclockwise",counterclockwise);
+  server.on("/clockwise",clockwise);
   server.on("/mdns",mdnsresponder);
   server.onNotFound(handleNotFound);
   
@@ -238,26 +280,6 @@ void loop() {
   
   server.handleClient();
 
-  MDNS.update();
-
-  int a=digitalRead(ir1);
-  int b=digitalRead(ir2);
-  int c=digitalRead(ir3);
-  int d=digitalRead(ir4);
-  int e=ssdistance();
-  Serial.println(a);
-  Serial.println(b);
-  Serial.println(c);
-  Serial.println(d);
-  Serial.println(e);
-  if (e < 20 || a== 0 || b ==0 || c ==0 || d ==0){
-    GetUrl = "http://car-2w-master.local/?car=3";     //自动识别转向
-    identifyforword(GetUrl);
-  } else {
-    GetUrl = "http://car-2w-master.local/?car=1";    //自动向前
-    identifyforword(GetUrl);
-  }
-
-  delay(1000);
+  delay(1000);  
 
 }

@@ -6,27 +6,25 @@
 #include <ESP8266WebServer.h>
 
 
-// ESP8266 Motor shield
 // pin 使用说明：
-// D0: 
-// D1: 点击A转速
-// D2: 点击B转速
-// D3: 点击A方向
-// D4: 点击B方向
-// D5: 
-// D6: 
-// D7: 
-// D8: 
-// VM: 电机电源输入 4.5V~36V,可单独供电;
-// VIN: 控制电源输入 4.5V~9V(10VMAX),可单独供电
-// 短路 VM 和 VIN),可以方便地使用一路电源(必须 4.5V~9V)同时完成电机的驱动与控制;
+// D0(16): 
+// D1(5): m11
+// D2(4): m12
+// D3(0): m21
+// D4(2):m22
+// D5(14): m31
+// D6(12): m32
+// D7(13): m41
+// D8(15): m42
+
+
 
 // 各种变量定义
 // 各种变量定义 - begin
 
 // mdns name 定义
 // String mdnsname = "dragonfly-" + String(ESP.getChipId()); //dragonfly-7914686.local
-  String mdnsname = "car-2w-master";
+  String mdnsname = "car";
 
 // http web page ,FPSTR from <WiFiManager.h>
 const char HTTP_HEADER_NEW[] PROGMEM          = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><title></title>";
@@ -37,13 +35,14 @@ const char HTTP_END_NEW[] PROGMEM             = "</div></body></html>";
 
 
 // 电机控制线
-int mas=D1;
-int mbs=D2;
-int mad=D3;
-int mbd=D4;
-
-// 电机模拟电量输入
-int power=800;
+int m11=D1;
+int m12=D2;
+int m21=D3;
+int m22=D4;
+int m31=D5;
+int m32=D6;
+int m41=D7;
+int m42=D8;
 
 // 各种变量定义 - end
 
@@ -65,105 +64,195 @@ ESP8266WebServer server;
 
 
 
+// motor motor motor motor motor motor motor motor motor
+// 单轮待机
+void mwait(int in1, int in2){
+  digitalWrite(in1,0);
+  digitalWrite(in2,0);
+}
+
+// 单轮刹车
+void mstop(int in1, int in2){
+  digitalWrite(in1,1);
+  digitalWrite(in2,1);
+}
+
+// 单轮正转最快
+void mforword(int in1, int in2){
+  digitalWrite(in1,1);
+  digitalWrite(in2,0);
+}
+
+// 单轮反转最快
+void mreversion(int in1, int in2){
+  digitalWrite(in1,0);
+  digitalWrite(in2,1);
+}
+
+// 单轮正转 - 加速
+// s 模拟数值 0 - 1024
+void mfa(int in1, int in2){
+  int s;
+  for(s=0;s<1024;s=s+10){
+    analogWrite(in1,s);
+    digitalWrite(in2,0);
+    delay(50);
+  }
+}
+
+// 单轮反转 - 加速
+// s 模拟数值 0 - 1024
+void mra(int in1, int in2){
+  int s;
+  for(s=1024;s>0;s=s-10){
+    analogWrite(in1,0);
+    digitalWrite(in2,s);
+    delay(50);
+  }
+}
+
+
+
 // car car car car car car car car car car car car car car car car car car car car
-// analogWrite(mas,1024)
-// digitalWrite(mad,1);
-// car carforword  up
-void carforword(int power){
-  digitalWrite(mad,1);
-  digitalWrite(mbd,1);  
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
+// car forword  up
+void carforword(){
+  carwait();
+  delay(500);
+  mforword(m11, m12);
+  mforword(m21, m22);
+  mforword(m31, m32);
+  mforword(m41, m42);
 }
 
 
 
-// car carreversion down
-void carreversion(int power){
-  digitalWrite(mad,0);
-  digitalWrite(mbd,0);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
+// car reversion down
+void carreversion(){
+  carwait();
+  delay(500);
+  mreversion(m11, m12);
+  mreversion(m21, m22);
+  mreversion(m31, m32);
+  mreversion(m41, m42);
 }
 
 
 
-// car counterclockwise
-void counterclockwise(int power){
-  digitalWrite(mad,0);
-  digitalWrite(mbd,1);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
-  delay(300);
-  carforword(power);
+// car forword turn left , left up
+void carforwordleft(){
+  carwait();
+  delay(500);
+  mforword(m11, m12);
+  mforword(m21, m22);
+  mreversion(m31, m32);
+  mforword(m41, m42);
+
+  delay(1000);
+  mwait(m31, m32);
+  mforword(m31, m32);
+  
 }
 
 
 
-// car clockwise
-void clockwise(int power){
-  digitalWrite(mad,1);
-  digitalWrite(mbd,0);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
-  delay(300);
-  carforword(power);
+// car forword turn right, right up
+void carforwordright(){
+  carwait();
+  delay(500);
+  mreversion(m11, m12);
+  mforword(m21, m22);
+  mforword(m31, m32);
+  mforword(m41, m42);
+
+  delay(1000);
+  mwait(m11, m12);
+  mforword(m11, m12);
 }
 
 
-// car carstop
+// car eversion turn left, left down
+void carreversionleft(){
+  carwait();
+  delay(500);
+  mreversion(m11, m12);
+  mreversion(m21, m22);
+  mreversion(m31, m32);
+  mforword(m41, m42);
+
+  delay(1000);
+  mwait(m41, m42);
+  mreversion(m41, m42);
+}
+
+
+
+// car eversion turn right, right down
+void carreversionright(){
+  carwait();
+  delay(500);
+  mreversion(m11, m12);
+  mforword(m21, m22);
+  mreversion(m31, m32);
+  mreversion(m41, m42);
+
+  delay(1000);
+  mwait(m21, m22);
+  mreversion(m21, m22);
+}
+
+
+
+// car stop
 void carstop(){
-  digitalWrite(mas,0);
-  digitalWrite(mbs,0);
-}
-
-
-// car carforword  up little
-void carforwordlittle(int power){
-  // delay(500);
-  digitalWrite(mad,1);
-  digitalWrite(mbd,1);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
-  delay(100);
-  carstop();
+  carwait();
+  delay(500);
+  mstop(m11, m12);
+  mstop(m21, m22);
+  mstop(m31, m32);
+  mstop(m41, m42);
 }
 
 
 
-// car carreversion down little
-void carreversionlittle(int power){
-  digitalWrite(mad,0);
-  digitalWrite(mbd,0);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
-  delay(100);
-  carstop();
+// car wait
+void carwait(){
+  mwait(m11, m12);
+  mwait(m21, m22);
+  mwait(m31, m32);
+  mwait(m41, m42);
 }
 
 
 
-// car counterclockwise little
-void counterclockwiselittle(int power){
-  digitalWrite(mad,0);
-  digitalWrite(mbd,1);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
-  delay(100);
-  carstop();
+
+void test(){
+  // 正转最快
+//  mforword(m31, m32);
+//  delay(3000);
+  
+// 待机
+//  mwait(m31, m32);
+//  delay(3000);
+
+  // 刹车
+//  mstop(m31, m32);
+//  delay(3000);
+
+// 反转最快
+//  mreversion(m31, m32);
+//  delay(3000);
+
+  // 待机
+ // mwait(m31, m32);
+//  delay(3000);
+  
+// 刹车
+//  mstop(m31, m32);
+//  delay(3000);
+
 }
 
 
-
-// car clockwise little
-void clockwiselittle(int power){
-  digitalWrite(mad,1);
-  digitalWrite(mbd,0);
-  analogWrite(mas,power);
-  analogWrite(mbs,power);
-  delay(100);
-  carstop();
-}
 
 
 void indexpage()
@@ -177,67 +266,47 @@ void indexpage()
   myhtml += FPSTR(HTTP_HEADER_END_NEW);
 
   myhtml += "<form>";
+  
   myhtml += "<br/><br/>";
-  myhtml += "<input type=\"range\" name=\"power\" min=\"1\" max=\"1024\" />";
-
-  myhtml += "<br/><br/>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"1\">carforword</button><br/><br/>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"3\">Left</button>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"5\">carstop</button>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"4\">Right</button><br/><br/>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"2\">carreversion</button>";
-
-  myhtml += "<br/><br/><br/><br/>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"6\">carforword-L</button><br/><br/>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"8\">Left-L</button>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"5\">carstop</button>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"9\">Right-L</button><br/><br/>";
-  myhtml += "<button type=\"submit\" name=\"car\" value=\"7\">carreversion-L</button>";
-
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"3\">Left Up</button>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"1\">Up</button>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"4\">Right Up</button><br/><br/><br/><br/><br/><br/>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"0\">Stop</button><br/><br/><br/><br/><br/><br/>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"5\">Left Down</button>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"2\">Down</button>";
+  myhtml += "<button type=\"submit\" name=\"car\" value=\"6\">Right Down</button><br/><br/>";
+  
   myhtml += "</form>";
 
   myhtml += FPSTR(HTTP_END_NEW);  
   server.send(200,"text/html",myhtml);
   
-  power = atoi(server.arg("power").c_str());
-
   if (server.arg("car")=="1") {
     Serial.println("qqqqqqqqqqqqqq");
-    Serial.println(power);
-    carforword(power);
+    carforword();
   } else if (server.arg("car")=="2") {
     Serial.println("hhhhhhhhhhhhhhhhh");
-    Serial.println(power);
-    carreversion(power);
+    carreversion();
   } else if (server.arg("car")=="3") {
-    Serial.println("zuo zuo zuo");
-    Serial.println(power);
-    counterclockwise(power);
+    Serial.println("zuo qian");
+    carforwordleft();
   } else if (server.arg("car")=="4") {
-    Serial.println("you you you");
-    Serial.println(power);
-    clockwise(power);
+    Serial.println("you qian");
+    carforwordright();
   } else if (server.arg("car")=="5") {
-    Serial.println("ttttttttttttttttt");
-    Serial.println(power);
-    carstop();
+    Serial.println("zuo hou");
+    carreversionleft();
   } else if (server.arg("car")=="6") {
-    Serial.println("qqqqqqqqqqqqqq -L-L-L");
-    Serial.println(power);
-    carforwordlittle(power);
-  } else if (server.arg("car")=="7") {
-    Serial.println("hhhhhhhhhhhhhhhhh -L-L-L");
-    Serial.println(power);
-    carreversionlittle(power);
-  } else if (server.arg("car")=="8") {
-    Serial.println("zuo zuo zuo -L-L-L");
-    Serial.println(power);
-    counterclockwiselittle(power);
-  } else if (server.arg("car")=="9") {
-    Serial.println("you you you -L-L-L");
-    Serial.println(power);
-    clockwiselittle(power);
+    Serial.println("right hou");
+    carreversionright();
+  } else if (server.arg("car")=="0") {
+    Serial.println("stop stop");
+    carstop();
+  } else if (server.arg("car")=="") {
+    Serial.println("xxxxxxxxxxxxxxxxxxxxxx");
+    carstop();
   }
+
 
 }
 
@@ -312,15 +381,14 @@ void setup() {
   Serial.begin(115200);
   Serial.println("=================================");
 
-  pinMode(mas,OUTPUT);
-  pinMode(mbs,OUTPUT);
-  pinMode(mad,OUTPUT);
-  pinMode(mbd,OUTPUT);
-
-  //pinMode(m31,OUTPUT);
-  //pinMode(m32,OUTPUT);
-  //pinMode(m41,OUTPUT);
-  //pinMode(m42,OUTPUT);
+  pinMode(m11,OUTPUT);
+  pinMode(m12,OUTPUT);
+  pinMode(m21,OUTPUT);
+  pinMode(m22,OUTPUT);
+  pinMode(m31,OUTPUT);
+  pinMode(m32,OUTPUT);
+  pinMode(m41,OUTPUT);
+  pinMode(m42,OUTPUT);
 
   // Connect to WiFi network
   WiFiManager wifiManager;
@@ -344,11 +412,18 @@ void setup() {
   Serial.println("mDNS responder started");
   Serial.println(mdnsname);
   //往mDNS里面注册服务
-  //MDNS.addService("car", "tcp", 8080); 
+  MDNS.addService("car", "tcp", 8080); 
 
   // server route
   server.on("/",indexpage);
   server.on("/indexpage",indexpage);
+  server.on("/carforword",carforword);
+  server.on("/carreversion",carreversion);
+  server.on("/carforwordleft",carforwordleft);
+  server.on("/carforwordright",carforwordright);
+  server.on("/carreversionleft",carreversionleft);
+  server.on("/carreversionright",carreversionright);
+  server.on("/carstop",carstop);
   server.on("/mdns",mdnsresponder);
   server.onNotFound(handleNotFound);
   
@@ -364,8 +439,6 @@ void setup() {
 void loop() {
   
   server.handleClient();
-
-  MDNS.update();
 
   delay(1000);  
 
