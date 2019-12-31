@@ -3,6 +3,7 @@
 #include <WiFiClient.h>
 #include <WiFiManager.h>
 #include <Arduino.h>
+#include <ESP8266httpUpdate.h>
 
 
 // pin 使用说明：
@@ -21,9 +22,32 @@
 
 // ***********************************
 
+// 各种自定义配置，如无特殊要求，可以用默认配置。
+
+// OTA 配置（默认不更新）
+// OTA-定义软件版本，用于OTA升级校验使用
+float localversion = 1.0;
+
+// OTA-定义服务器端bin文件的最新 version ，例如路径：http://192.168.1.9:8888/static/log/member/version 
+// 通过 django 数据库进行管理，api 创建参考 https://blog.csdn.net/weixin_43420032/article/details/94631231
+String versionpath = "";
+
+// OTA-定义bin文件的下载路径，用于OTA升级下载bin文件，例如：http://192.168.1.9:8888/static/log/member/test1.hello.ino.nodemcu.bin
+String otapath = "";
+
+// mdns 配置
+// mdns name 定义
+String mdnsname = "dragonfly-" + String(ESP.getChipId()); //dragonfly-7914686.local
+
+
+
+
+// ***********************************
+
 
 // 各种变量定义
 // 各种变量定义 - begin
+
 
 // http web page ,FPSTR from <WiFiManager.h>
 const char HTTP_HEADER_NEW[] PROGMEM          = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><meta http-equiv=\"refresh\" content=\"5\"><title></title>";
@@ -34,9 +58,6 @@ const char HTTP_END_NEW[] PROGMEM             = "</div></body></html>";
 
 // pin 定义
 int wifibutton = D4;  //wifibutton
-
-// mdns name 定义
-String mdnsname = "dragonfly-" + String(ESP.getChipId()); //dragonfly-7914686.local
 
 // 各种变量定义 - end
 
@@ -54,7 +75,7 @@ ESP8266WebServer server;
 
 // 各种服务定义 - end
 
-// ***********************************
+// *********************************** *********************************** ***********************************
 
 
 
@@ -163,7 +184,25 @@ void handleNotFound() {
     message += " " + server.argName ( i ) + ": " + server.arg ( i ) + "\n";  
   }  
   server.send ( 404, "text/plain", message );  
-}  
+}
+
+
+void otaupdate(){
+  if(otapath != ""){
+      t_httpUpdate_return ret = ESPhttpUpdate.update(otapath); // 编译好的固件文件
+      switch(ret) {
+          case HTTP_UPDATE_FAILED:
+              Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+              break;
+          case HTTP_UPDATE_NO_UPDATES:
+              Serial.println("HTTP_UPDATE_NO_UPDATES");
+              break;
+          case HTTP_UPDATE_OK:
+              Serial.println("HTTP_UPDATE_OK");
+              break;
+        }
+  } 
+}
 
 
 // clear wifi infor. it needs set the wifi after press the wifibutton.
@@ -216,6 +255,7 @@ void setup(void) {
   server.on("/sensor",valsensor);
   server.on("/nocss",nocss);
   server.on("/mdns",mdnsresponder);
+  server.on("/otaupdate",otaupdate);
   server.onNotFound(handleNotFound);
 
   // Start TCP (HTTP) server
