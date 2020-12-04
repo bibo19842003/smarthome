@@ -72,7 +72,7 @@ void blink_3s(){
 }
 
 
-void all_red_light_3s(){
+void all_led_light_3s(){
   digitalWrite(led_r,1);
   digitalWrite(led_y,1);
   digitalWrite(led_g,1);
@@ -164,7 +164,7 @@ String getContentType(String filename){
   return "text/plain";  
 }
 
-  
+
 // NotFound处理 用于处理没有注册的请求地址 一般是处理一些页面请求 
 void handleNotFound() {  
   String path = server.uri();  
@@ -213,7 +213,7 @@ void setup() {
   wifiManager.autoConnect("dragonfly");
 
   // SPIFFS 初始化
-  SPIFFS.begin();  
+  SPIFFS.begin();
 
   // server route
   server.on("/",nocss);
@@ -235,7 +235,8 @@ void setup() {
   pinMode(button_y, INPUT); // 按钮输入
   pinMode(button_g, INPUT); // 按钮输入
   pinMode(button_wifi, INPUT); // 按钮输入
-
+  
+  Serial.println("--------------------------");
 }
 
 
@@ -304,9 +305,10 @@ void loop() {
         Serial.println(btn_time_dur);
         blink_3s();
         clearwifipass();
-        all_red_light_3s();
-        //Serial.println("it will restart");
-        //ESP.restart();
+        all_led_light_3s();
+        delay(3000);
+        Serial.println("it will restart!!!");
+        ESP.restart();
         //ESP.reset();
       }
     }
