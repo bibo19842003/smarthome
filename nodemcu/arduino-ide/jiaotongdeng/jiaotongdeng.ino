@@ -43,6 +43,26 @@ unsigned long btn_time_dur = 0;
 int wifi_status_old = 0;
 int wifi_pin_lh = 0;
 
+String led_b_r_g_on = "style=\"background-color:gray\"";
+String led_b_r_b_on = "style=\"background-color:blue\"";
+String led_b_y_g_on = "style=\"background-color:gray\"";
+String led_b_y_b_on = "style=\"background-color:blue\"";
+String led_b_g_g_on = "style=\"background-color:gray\"";
+String led_b_g_b_on = "style=\"background-color:blue\"";
+String led_b_r_g_off = "style=\"background-color:gray\"";
+String led_b_r_b_off = "style=\"background-color:blue\"";
+String led_b_y_g_off = "style=\"background-color:gray\"";
+String led_b_y_b_off = "style=\"background-color:blue\"";
+String led_b_g_g_off = "style=\"background-color:gray\"";
+String led_b_g_b_off = "style=\"background-color:blue\"";
+
+String led_b_r_s_on = led_b_r_g_on;
+String led_b_y_s_on = led_b_y_g_on;
+String led_b_g_s_on = led_b_g_g_on;
+String led_b_r_s_off = led_b_r_g_off;
+String led_b_y_s_off = led_b_y_g_off;
+String led_b_g_s_off = led_b_g_g_off;
+
 
 // Create an instance of the server
 // specify the port to listen on as an argument
@@ -97,10 +117,10 @@ void valsensor()
 void nocss()
 {
 //  String myhtml ="<html><head><title>Smart Home</title></head><body><h1>Test Smarthome<h1><form>test led:<button type=\"submit\" name=\"testledstatus\"value=\"0\">off</button><button type=\"submit\" name=\"testledstatus\" value=\"1\">on</button></form><form>buzzer and led:<button type=\"submit\" name=\"ledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"ledstatus\" value=\"1\">on</button></form><form>Wifi mode:<button type=\"submit\" name=\"wifiled\" value=\"0\">STA</button><button type=\"submit\" name=\"wifiled\" value=\"1\">STAAP</button></form></body></html>";
-  String myhtml ="<html><head><title>Smart Home</title></head><body><h1>Smart Home<h1><form>Red led:<button type=\"submit\" name=\"rledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"rledstatus\" value=\"1\">on</button></form></body></html>";
+  String myhtml ="<html><head><title>Smart Home</title><meta http-equiv=\"refresh\" content=\"1\"></head><body><h1>Smart Home<h1><form>Red led:<button " + led_b_r_s_off + " type=\"submit\" name=\"rledstatus\" value=\"0\">off</button><button " + led_b_r_s_on + " type=\"submit\" name=\"rledstatus\" value=\"1\">on</button></form></body></html>";
 
-  myhtml += "<form>Yellow led:<button type=\"submit\" name=\"yledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"yledstatus\" value=\"1\">on</button></form>";
-  myhtml += "<form>Green led:<button type=\"submit\" name=\"gledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"gledstatus\" value=\"1\">on</button></form>";
+  myhtml += "<form>Yellow led:<button " + led_b_y_s_off + " type=\"submit\" name=\"yledstatus\" value=\"0\">off</button><button " + led_b_y_s_on + " type=\"submit\" name=\"yledstatus\" value=\"1\">on</button></form>";
+  myhtml += "<form>Green led:<button " + led_b_g_s_off + "  type=\"submit\" name=\"gledstatus\" value=\"0\">off</button><button " + led_b_g_s_on + " type=\"submit\" name=\"gledstatus\" value=\"1\">on</button></form>";
   myhtml += "<form>All led:<button type=\"submit\" name=\"allledstatus\" value=\"0\">off</button><button type=\"submit\" name=\"allledstatus\" value=\"1\">on</button></form>";
 
   server.send(200,"text/html",myhtml);
@@ -235,7 +255,7 @@ void setup() {
   pinMode(button_y, INPUT); // 按钮输入
   pinMode(button_g, INPUT); // 按钮输入
   pinMode(button_wifi, INPUT); // 按钮输入
-  
+
   Serial.println("--------------------------");
 }
 
@@ -244,16 +264,15 @@ void setup() {
 
 
 void loop() {
-
   // wait for http client
   server.handleClient();
-
 
   temp_r = digitalRead(button_r);
   temp_y = digitalRead(button_y);
   temp_g = digitalRead(button_g);
   temp_wifi = digitalRead(button_wifi);
-  
+
+
   if (temp_r == HIGH) {
     old_r = !old_r;
     digitalWrite(led_r, old_r);
@@ -315,6 +334,36 @@ void loop() {
     wifi_status_old = 0;
     wifi_pin_lh =0;
   }
+
+
+// web 按钮颜色
+  if ( old_r == 0) {
+    led_b_r_s_off = led_b_r_b_off;
+    led_b_r_s_on = led_b_r_g_on;
+  }
+  else {
+    led_b_r_s_off = led_b_r_g_off;
+    led_b_r_s_on = led_b_r_b_on;
+  }
+
+  if ( old_y == 0) {
+    led_b_y_s_off = led_b_y_b_off;
+    led_b_y_s_on = led_b_y_g_on;
+  }
+  else {
+    led_b_y_s_off = led_b_y_g_off;
+    led_b_y_s_on = led_b_y_b_on;
+  }
+
+  if ( old_g == 0) {
+    led_b_g_s_off = led_b_g_b_off;
+    led_b_g_s_on = led_b_g_g_on;
+  }
+  else {
+    led_b_g_s_off = led_b_g_g_off;
+    led_b_g_s_on = led_b_g_b_on;
+  }
+
 
   delay(350);
 }
